@@ -115,7 +115,7 @@ module Upyun
       date = gmdate
       length = options[:length] || 0
       headers.merge!({
-        'User-Agent' => "Upyun-Ruby-SDK-#{VERSION}",
+        'User-Agent' => "Upyun-Ruby-SDK",
         'Date' => date,
         'Authorization' => sign(method, date, fullpath, length)
       })
