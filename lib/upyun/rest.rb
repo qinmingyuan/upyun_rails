@@ -100,10 +100,8 @@ module Upyun
 
     private
     def fullpath(path)
-      decoded = URI::encode(URI::decode(path.to_s.force_encoding('utf-8')))
+      decoded = ERB::Util.url_encode(path.to_s.force_encoding('utf-8'))
 
-      # URI::encode did not encode '[]'
-      decoded = decoded.gsub('[', '%5B').gsub(']', '%5D')
       "/#{@bucket}#{decoded.start_with?('/') ? decoded : '/' + decoded}"
     end
 
@@ -115,7 +113,7 @@ module Upyun
       date = gmdate
       length = options[:length] || 0
       headers.merge!({
-        'User-Agent' => "Upyun-Ruby-SDK",
+        'User-Agent' => 'Upyun-Ruby-SDK',
         'Date' => date,
         'Authorization' => sign(method, date, fullpath, length)
       })
