@@ -93,7 +93,6 @@ module ActiveStorage
     end
 
     def headers_for_direct_upload(key, content_type:, checksum:, content_length:, **)
-      user = @operator
       pwd = md5(@password)
       method = 'PUT'
       uri = ["/#{@bucket}", @folder, key].join('/')
