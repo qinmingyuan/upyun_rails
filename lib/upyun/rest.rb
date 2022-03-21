@@ -43,7 +43,7 @@ module Upyun
       file.close if file.respond_to?(:close)
     end
 
-    def get(path, savepath=nil, headers={})
+    def get(path, savepath = nil, headers = {})
       res = request(:get, path, headers: headers)
       return res if res.is_a?(Hash) || !savepath
 
@@ -105,7 +105,7 @@ module Upyun
       "/#{@bucket}#{decoded.start_with?('/') ? decoded : '/' + decoded}"
     end
 
-    def request(method, path, options={}, &block)
+    def request(method, path, options = {}, &block)
       fullpath = fullpath(path)
       query = options[:query]
       fullpath_query = "#{fullpath}#{query.nil? ? '' : '?' + query}"
@@ -130,7 +130,6 @@ module Upyun
             }
           end
         end
-
       else
         rest_client[fullpath_query].send(method, headers) do |res|
           if res.code / 100 == 2
@@ -145,7 +144,10 @@ module Upyun
           else
           {
             request_id: res.headers[:x_request_id],
-            error: {code: res.code, message: res.body}
+            error: {
+              code: res.code,
+              message: res.body
+            }
           }
           end
         end
