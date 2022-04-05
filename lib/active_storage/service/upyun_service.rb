@@ -63,7 +63,7 @@ module ActiveStorage
     def download_chunk(key, range)
       instrument :download_chunk, key: key, range: range do
         range_end = range.exclude_end? ? range.end - 1 : range.end
-        @upyun.get(path_for(key), nil, headers: {range: "bytes=#{range.begin}-#{range_end}"})
+        @upyun.get(path_for(key), nil, headers: { range: "bytes=#{range.begin}-#{range_end}" })
       end
     end
 
@@ -84,7 +84,7 @@ module ActiveStorage
       end
     end
 
-    def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:)
+    def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, **)
       instrument :url, key: key do |payload|
         url = [ENDPOINT, @bucket , @folder, key].join('/')
         payload[:url] = url
