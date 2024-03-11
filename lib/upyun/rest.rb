@@ -43,7 +43,7 @@ module Upyun
     end
 
     def get(path, savepath = nil, headers = {})
-      res = request(:get, path, headers: headers)
+      res = request('GET', path, headers: headers)
       return res if res.is_a?(Hash) || !savepath
 
       dir = File.dirname(savepath)
@@ -111,15 +111,15 @@ module Upyun
       headers = options[:headers] || {}
       date = gmdate
       length = options[:length] || 0
-      headers.merge!({
+      headers.merge!(
         'User-Agent' => 'Upyun-Ruby-SDK',
         'Date' => date,
         'Authorization' => sign(method, date, fullpath, length)
-      })
+      )
 
       if [:post, :patch, :put].include? method
         body = options[:body].nil? ? '' : options[:body]
-        rest_client.request(method, path, body, headers) do |res|
+        rest_client.request(method, path, body, headers: headers) do |res|
           if res.code >= 200 && res.code < 300
             block_given? ? yield(res.headers) : true
           else
@@ -130,7 +130,8 @@ module Upyun
           end
         end
       else
-        rest_client.request(method, path, headers) do |res|
+        binding.b
+        rest_client.request(method, path, headers: headers) do |res|
           if res.code >= 200 && res.code < 300
             case method
             when :get
@@ -154,7 +155,7 @@ module Upyun
     end
 
     def rest_client
-      @rest_client ||= HTTPX.with(base_path: "https://#{@endpoint}", **options)
+      @rest_client ||= HTTPX.with(origin: "https://#{@endpoint}", **options)
     end
 
     def gmdate
@@ -163,7 +164,7 @@ module Upyun
 
     def sign(method, date, path, length)
       sign = "#{method.to_s.upcase}&#{path}&#{date}&#{length}&#{@password}"
-      "UpYun #{@operator}:#{md5(sign)}"
+      "UPYUN #{@operator}:#{md5(sign)}"
     end
 
     def size(param)
