@@ -1,4 +1,4 @@
-require 'restclient'
+require 'httpx'
 require 'open-uri'
 
 module Upyun
@@ -120,7 +120,7 @@ module Upyun
 
       if [:post, :patch, :put].include? method
         body = options[:body].nil? ? '' : options[:body]
-        rest_client[fullpath_query].send(method, body, headers) do |res|
+        rest_client.request(method, path, body, headers) do |res|
           if res.code / 100 == 2
             block_given? ? yield(res.headers) : true
           else
@@ -131,7 +131,7 @@ module Upyun
           end
         end
       else
-        rest_client[fullpath_query].send(method, headers) do |res|
+        rest_client.request(method, path, headers) do |res|
           if res.code / 100 == 2
             case method
             when :get
@@ -155,7 +155,7 @@ module Upyun
     end
 
     def rest_client
-      @rest_clint ||= RestClient::Resource.new("http://#{@endpoint}", options)
+      @rest_client ||= HTTPX.with(base_path: "http://#{@endpoint}", **options)
     end
 
     def gmdate

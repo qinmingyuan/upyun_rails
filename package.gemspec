@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   ]
 
   s.add_dependency 'activestorage'
-  s.add_dependency 'rest-client'
+  s.add_dependency 'httpx'
 
   s.add_development_dependency 'bundler'
   s.add_development_dependency 'rake'
