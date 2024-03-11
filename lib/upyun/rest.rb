@@ -15,7 +15,6 @@ module Upyun
     end
 
     def put(path, file, headers = {})
-      headers = headers.merge({'mkdir' => true}) unless headers.key?('mkdir')
       if file.is_a?(StringIO)
         body = file.read
       elsif file.respond_to?(:read)
@@ -71,7 +70,7 @@ module Upyun
     end
 
     def mkdir(path)
-      request(:post, path, {headers: {folder: true, mkdir: true}})
+      request(:post, path, {headers: {folder: true}})
     end
 
     def getlist(path='/')
@@ -155,7 +154,7 @@ module Upyun
     end
 
     def rest_client
-      @rest_client ||= HTTPX.with(base_path: "http://#{@endpoint}", **options)
+      @rest_client ||= HTTPX.with(base_path: "https://#{@endpoint}", **options)
     end
 
     def gmdate
