@@ -109,12 +109,12 @@ module Upyun
       query = options[:query]
       fullpath_query = "#{fullpath}#{query.nil? ? '' : '?' + query}"
       headers = options[:headers] || {}
+      x = options[:body].present? ? Utils.md5(options[:body]) : ''
       date = gmdate
-      length = options[:length] || 0
       headers.merge!(
         'User-Agent' => 'Upyun-Ruby-SDK',
         'Date' => date,
-        'Authorization' => sign(method, date, fullpath, length)
+        'Authorization' => sign(method, date, fullpath, x)
       )
 
       if [:post, :patch, :put].include? method
@@ -162,9 +162,9 @@ module Upyun
       Time.now.utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
     end
 
-    def sign(method, date, path, length)
-      sign = "#{method.to_s.upcase}&#{path}&#{date}&#{length}&#{@password}"
-      "UPYUN #{@operator}:#{md5(sign)}"
+    def sign(method, date, path, md5)
+      sign = "#{method.to_s.upcase}&#{path}&#{date}&#{md5}"
+      "UPYUN #{@operator}:#{Utils.hmac_sha1(@password, sign)}"
     end
 
     def size(param)
