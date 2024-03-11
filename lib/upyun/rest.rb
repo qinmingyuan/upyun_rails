@@ -120,7 +120,7 @@ module Upyun
       if [:post, :patch, :put].include? method
         body = options[:body].nil? ? '' : options[:body]
         rest_client.request(method, path, body, headers) do |res|
-          if res.code / 100 == 2
+          if res.code >= 200 && res.code < 300
             block_given? ? yield(res.headers) : true
           else
             {
@@ -131,7 +131,7 @@ module Upyun
         end
       else
         rest_client.request(method, path, headers) do |res|
-          if res.code / 100 == 2
+          if res.code >= 200 && res.code < 300
             case method
             when :get
               res.body
