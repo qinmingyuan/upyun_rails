@@ -163,8 +163,12 @@ module Upyun
     end
 
     def sign(method, date, path, md5)
-      sign = "#{method.to_s.upcase}&#{path}&#{date}&#{md5}"
-      "UPYUN #{@operator}:#{Utils.hmac_sha1(@password, sign)}"
+      if md5.present?
+        sign = "#{method.to_s.upcase}&#{path}&#{date}&#{md5}"
+      else
+        sign = "#{method.to_s.upcase}&#{path}&#{date}"
+      end
+      "UPYUN #{@operator}:#{Utils.hmac_sha1(Digest::MD5.hexdigest(@password), sign)}"
     end
 
     def size(param)

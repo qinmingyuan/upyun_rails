@@ -9,7 +9,7 @@ module Upyun
     end
 
     def hmac_sha1(key, str)
-      Base64.encode64(OpenSSL::HMAC.digest('sha1', key, str))
+      Base64.urlsafe_encode64(OpenSSL::HMAC.digest('sha1', key, str))
     end
 
     def included(receiver)
