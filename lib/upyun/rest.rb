@@ -120,7 +120,7 @@ module Upyun
     end
 
     def rest_client
-      @rest_client ||= HTTPX.with(origin: "https://#{@endpoint}", debug: STDERR, **options)
+      @rest_client ||= HTTPX.with(origin: "https://#{@endpoint}", **options)
     end
 
     def sign(method, path, date, md5)
