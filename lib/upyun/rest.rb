@@ -44,11 +44,15 @@ module Upyun
 
     def get(path, savepath = nil, headers = {})
       res = request('GET', path, headers: headers)
-      return res if res.is_a?(Hash) || !savepath
-
-      dir = File.dirname(savepath)
-      FileUtils.mkdir_p(dir) unless File.directory?(dir)
-      File.write(savepath, res)
+      if savepath
+        dir = File.dirname(savepath)
+        FileUtils.mkdir_p(dir) unless File.directory?(dir)
+        File.write(savepath, res)
+      else
+        file = Tempfile.new
+        IO.copy_stream res.body, file
+        file
+      end
     end
 
     def getinfo(path)
