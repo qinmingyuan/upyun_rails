@@ -93,15 +93,13 @@ module ActiveStorage
     end
 
     def headers_for_direct_upload(key, content_type:, checksum:, content_length:, **)
-      pwd = md5(@password)
+      pwd = Digest::MD5.hexdigest(@password)
       method = 'PUT'
       uri = ["/#{@bucket}", @folder, key].join('/')
-      date = gmdate
+      date = Time.now.utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
 
       str = [method, uri, date].join("&")
-      signature = Base64.strict_encode64(
-        OpenSSL::HMAC.digest('sha1', pwd, str)
-      )
+      signature = OpenSSL::HMAC.base64digest('sha1', pwd, str)
       auth = "UPYUN #{@operator}:#{signature}"
       {
         'Content-Type' => content_type,
@@ -140,14 +138,6 @@ module ActiveStorage
       decoded = URI::encode(URI::decode(path.to_s.force_encoding('utf-8')))
       decoded = decoded.gsub('[', '%5B').gsub(']', '%5D')
       "/#{@bucket}#{decoded.start_with?('/') ? decoded : '/' + decoded}"
-    end
-
-    def md5(str)
-      Digest::MD5.hexdigest(str)
-    end
-
-    def gmdate
-      Time.now.utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
     end
 
   end
