@@ -109,47 +109,14 @@ module Upyun
       headers = options[:headers] || {}
       x = options[:body].present? ? Digest::MD5.hexdigest(options[:body]) : ''
       date = Time.now.utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
+      headers.transform_keys!(&->(k){ k.to_s.dasherize })
       headers.merge!(
         'Date' => date,
         'Content-MD5' => x,
         'Authorization' => sign(method, fullpath, date, x)
       )
 
-      if [:post, :patch, :put].include? method
-        body = options[:body].nil? ? '' : options[:body]
-        rest_client.request(method, fullpath, body, headers: headers) do |res|
-          if res.code >= 200 && res.code < 300
-            block_given? ? yield(res.headers) : true
-          else
-            {
-              request_id: res.headers[:x_request_id],
-              error: {code: res.code, message: res.body}
-            }
-          end
-        end
-      else
-        binding.b
-        rest_client.request(method, fullpath, headers: headers) do |res|
-          if res.code >= 200 && res.code < 300
-            case method
-            when :get
-              res.json
-            when :head
-              yield(res.headers)
-            else
-              true
-            end
-          else
-          {
-            request_id: res.headers[:x_request_id],
-            error: {
-              code: res.code,
-              message: res.body
-            }
-          }
-          end
-        end
-      end
+      rest_client.request(method, fullpath, headers: headers, **options.slice(:body))
     end
 
     def rest_client
