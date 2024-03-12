@@ -84,7 +84,7 @@ module ActiveStorage
       end
     end
 
-    def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, **)
+    def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, **options)
       instrument :url, key: key do |payload|
         url = [ENDPOINT, @bucket , @folder, key].join('/')
         payload[:url] = url
@@ -103,7 +103,11 @@ module ActiveStorage
         OpenSSL::HMAC.digest('sha1', pwd, str)
       )
       auth = "UPYUN #{@operator}:#{signature}"
-      { 'Content-Type' => content_type, 'Authorization' => auth, 'X-Date' => date }
+      {
+        'Content-Type' => content_type,
+        'Authorization' => auth,
+        'Date' => date
+      }
     end
 
     def delete_prefixed(prefix)
