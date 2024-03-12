@@ -9,7 +9,7 @@ module Upyun
     def initialize(bucket, operator, password, options={timeout: 60}, endpoint = Upyun::ED_AUTO)
       @bucket = bucket
       @operator = operator
-      @password = md5(password)
+      @password = password
       @options = options
       @endpoint = endpoint
     end
@@ -99,9 +99,7 @@ module Upyun
 
     private
     def fullpath(path)
-      decoded = ERB::Util.url_encode(path.to_s.force_encoding('utf-8'))
-
-      "/#{@bucket}#{decoded.start_with?('/') ? decoded : '/' + decoded}"
+      "/#{@bucket}#{path.start_with?('/') ? path : '/' + path}"
     end
 
     def request(method, path, options = {}, &block)
@@ -109,17 +107,17 @@ module Upyun
       query = options[:query]
       fullpath_query = "#{fullpath}#{query.nil? ? '' : '?' + query}"
       headers = options[:headers] || {}
-      x = options[:body].present? ? Utils.md5(options[:body]) : ''
-      date = gmdate
+      x = options[:body].present? ? Digest::MD5.hexdigest(options[:body]) : ''
+      date = Time.now.utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
       headers.merge!(
-        'User-Agent' => 'Upyun-Ruby-SDK',
         'Date' => date,
-        'Authorization' => sign(method, date, fullpath, x)
+        'Content-MD5' => x,
+        'Authorization' => sign(method, fullpath, date, x)
       )
 
       if [:post, :patch, :put].include? method
         body = options[:body].nil? ? '' : options[:body]
-        rest_client.request(method, path, body, headers: headers) do |res|
+        rest_client.request(method, fullpath, body, headers: headers) do |res|
           if res.code >= 200 && res.code < 300
             block_given? ? yield(res.headers) : true
           else
@@ -131,11 +129,11 @@ module Upyun
         end
       else
         binding.b
-        rest_client.request(method, path, headers: headers) do |res|
+        rest_client.request(method, fullpath, headers: headers) do |res|
           if res.code >= 200 && res.code < 300
             case method
             when :get
-              res.body
+              res.json
             when :head
               yield(res.headers)
             else
@@ -155,19 +153,12 @@ module Upyun
     end
 
     def rest_client
-      @rest_client ||= HTTPX.with(origin: "https://#{@endpoint}", **options)
+      @rest_client ||= HTTPX.with(origin: "https://#{@endpoint}", debug: STDERR, **options)
     end
 
-    def gmdate
-      Time.now.utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
-    end
-
-    def sign(method, date, path, md5)
-      if md5.present?
-        sign = "#{method.to_s.upcase}&#{path}&#{date}&#{md5}"
-      else
-        sign = "#{method.to_s.upcase}&#{path}&#{date}"
-      end
+    def sign(method, path, date, md5)
+      sign = [method.to_s.upcase, path, date, md5.presence].compact.join('&')
+      puts "#{sign}"
       "UPYUN #{@operator}:#{Utils.hmac_sha1(Digest::MD5.hexdigest(@password), sign)}"
     end
 

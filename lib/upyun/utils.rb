@@ -4,12 +4,8 @@ module Upyun
   module Utils
     extend self
 
-    def md5(str)
-      Digest::MD5.hexdigest(str)
-    end
-
     def hmac_sha1(key, str)
-      Base64.urlsafe_encode64(OpenSSL::HMAC.digest('sha1', key, str))
+      OpenSSL::HMAC.base64digest('SHA1', key, str)
     end
 
     def included(receiver)
