@@ -104,7 +104,7 @@ module ActiveStorage
       {
         'Content-Type' => content_type,
         'Authorization' => auth,
-        'Date' => date
+        'X-Date' => date
       }
     end
 
