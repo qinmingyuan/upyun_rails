@@ -129,7 +129,6 @@ module Upyun
 
     def sign(method, path, date, md5)
       sign = [method.to_s.upcase, path, date, md5.presence].compact.join('&')
-      puts "#{sign}"
       "UPYUN #{@operator}:#{Utils.hmac_sha1(Digest::MD5.hexdigest(@password), sign)}"
     end
 
