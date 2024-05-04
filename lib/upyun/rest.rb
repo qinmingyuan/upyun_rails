@@ -6,7 +6,7 @@ module Upyun
     include Utils
 
     attr_reader :options
-    def initialize(bucket, operator, password, options={timeout: 60}, endpoint = Upyun::ED_AUTO)
+    def initialize(bucket, operator, password, options={ timeout: 60 }, endpoint = Upyun::ED_AUTO)
       @bucket = bucket
       @operator = operator
       @password = password
@@ -49,9 +49,7 @@ module Upyun
         FileUtils.mkdir_p(dir) unless File.directory?(dir)
         File.write(savepath, res)
       else
-        file = Tempfile.new
-        IO.copy_stream res.body, file
-        file
+        res.read
       end
     end
 
