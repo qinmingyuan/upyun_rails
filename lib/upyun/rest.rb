@@ -76,7 +76,7 @@ module Upyun
     end
 
     def getlist(path='/')
-      res = request(:get, path)
+      res = request(:get, path).json
       return res if res.is_a?(Hash)
 
       res.split("\n").map do |f|
