@@ -31,7 +31,7 @@ module Upyun
       # x-upyun-height
       # x-upyun-frames
       # x-upyun-file-type
-      res = request(:put, path, options) do |hds|
+      res = request('PUT', path, options) do |hds|
         hds.select { |k| k.to_s.match(/^x_upyun_/i) }.reduce({}) do |memo, (k, v)|
           memo.merge!({k[8..-1].to_sym => /^\d+$/.match(v) ? v.to_i : v})
         end
@@ -68,15 +68,15 @@ module Upyun
     alias :head :getinfo
 
     def delete(path)
-      request(:delete, path)
+      request('DELETE', path)
     end
 
     def mkdir(path)
-      request(:post, path, {headers: {folder: true}})
+      request('POST', path, {headers: {folder: true}})
     end
 
     def getlist(path='/')
-      res = request(:get, path).json
+      res = request('GET', path).json
       return res if res.is_a?(Hash)
 
       res.split("\n").map do |f|
@@ -91,7 +91,7 @@ module Upyun
     end
 
     def usage
-      res = request(:get, '/', {query: 'usage'})
+      res = request('GET', '/', {query: 'usage'})
       return res if res.is_a?(Hash)
 
       # RestClient has a bug, body.to_i returns the code instead of body,
