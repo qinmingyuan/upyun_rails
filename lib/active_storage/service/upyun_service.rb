@@ -131,7 +131,7 @@ module ActiveStorage
     end
 
     def path_for(key)
-      [@folder, key].join('/')
+      "/#{@folder}/#{key}"
     end
 
     def fullpath(path)

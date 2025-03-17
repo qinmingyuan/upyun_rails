@@ -31,13 +31,11 @@ module Upyun
       # x-upyun-height
       # x-upyun-frames
       # x-upyun-file-type
-      res = request('PUT', path, options) do |hds|
+      request('PUT', path, options) do |hds|
         hds.select { |k| k.to_s.match(/^x_upyun_/i) }.reduce({}) do |memo, (k, v)|
           memo.merge!({k[8..-1].to_sym => /^\d+$/.match(v) ? v.to_i : v})
         end
       end
-
-      res == {} ? true : res
     ensure
       file.close if file.respond_to?(:close)
     end
@@ -65,8 +63,6 @@ module Upyun
       end
     end
 
-    alias :head :getinfo
-
     def delete(path)
       request('DELETE', path)
     end
@@ -91,23 +87,12 @@ module Upyun
     end
 
     def usage
-      res = request('GET', '/', {query: 'usage'})
-      return res if res.is_a?(Hash)
-
-      # RestClient has a bug, body.to_i returns the code instead of body,
-      # see more on https://github.com/rest-client/rest-client/pull/103
-      res.dup.to_i
+      request('GET', '/?usage')
     end
 
     private
-    def fullpath(path)
-      "/#{@bucket}#{path.start_with?('/') ? path : '/' + path}"
-    end
-
     def request(method, path, options = {}, &block)
-      fullpath = fullpath(path)
-      query = options[:query]
-      fullpath_query = "#{fullpath}#{query.nil? ? '' : '?' + query}"
+      fullpath = "/#{@bucket}#{path.start_with?('/') ? path : '/' + path}"
       headers = options[:headers] || {}
       x = options[:body].present? ? Digest::MD5.hexdigest(options[:body]) : ''
       date = Time.now.utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
@@ -118,7 +103,7 @@ module Upyun
         'Authorization' => sign(method, fullpath, date, x)
       )
 
-      rest_client.request(method, fullpath, headers: headers, **options.slice(:body))
+      rest_client.request(method, fullpath, headers: headers, **options.slice(:body, :params))
     end
 
     def rest_client
