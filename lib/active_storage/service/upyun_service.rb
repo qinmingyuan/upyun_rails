@@ -28,30 +28,35 @@ module ActiveStorage
     attr_reader :upyun, :bucket, :operator, :password, :host, :folder, :upload_options
 
     def initialize(bucket:, operator:, password:, host:, folder:, **options)
+      @client = Upyun::Rest.new(operator, password, options)
       @bucket = bucket
+      @multipart_upload_threshold = options.delete(:multipart_threshold) || 50.megabytes
       @host = host
       @folder = folder
       @operator = operator
       @password = password
       @upload_options = options
-      @upyun = Upyun::Rest.new(bucket, operator, password, options)
     end
 
     def upload(key, io, checksum: nil, **options)
       instrument :upload, key: key, checksum: checksum do
-        @upyun.put(path_for(key), io, **options)
+        if io.size < @multipart_upload_threshold
+          @client.put(path_for(key), io, **options)
+        else
+          @client.put_chunk(path_for(key), io, **options)
+        end
       end
     end
 
     def delete(key)
       instrument :delete, key: key do
-        @upyun.delete(path_for(key))
+        @client.delete(path_for(key))
       end
     end
 
     def download(key)
       instrument :download, key: key do
-        io = @upyun.get(path_for(key))
+        io = @client.get(path_for(key))
         if block_given?
           yield io
         else
@@ -63,7 +68,7 @@ module ActiveStorage
     def download_chunk(key, range)
       instrument :download_chunk, key: key, range: range do
         range_end = range.exclude_end? ? range.end - 1 : range.end
-        @upyun.get(path_for(key), nil, headers: { range: "bytes=#{range.begin}-#{range_end}" })
+        @client.get(path_for(key), nil, headers: { range: "bytes=#{range.begin}-#{range_end}" })
       end
     end
 
@@ -110,13 +115,13 @@ module ActiveStorage
 
     def delete_prefixed(prefix)
       instrument :delete_prefixed, prefix: prefix do
-        items = @upyun.getlist "/#{@folder}/#{prefix}"
+        items = @client.getlist "/#{@folder}/#{prefix}"
         if items.is_a?(Array)
           items.each do |file|
-            @upyun.delete("/#{@folder}/#{prefix}#{file[:name]}")
+            @client.delete("/#{@folder}/#{prefix}#{file[:name]}")
           end
         end
-        @upyun.delete("/#{@folder}/#{prefix}")
+        @client.delete("/#{@folder}/#{prefix}")
       end
     end
 
@@ -131,13 +136,7 @@ module ActiveStorage
     end
 
     def path_for(key)
-      "/#{@folder}/#{key}"
-    end
-
-    def fullpath(path)
-      decoded = URI::encode(URI::decode(path.to_s.force_encoding('utf-8')))
-      decoded = decoded.gsub('[', '%5B').gsub(']', '%5D')
-      "/#{@bucket}#{decoded.start_with?('/') ? decoded : '/' + decoded}"
+      "/#{@bucket}/#{@folder}/#{key}"
     end
 
   end

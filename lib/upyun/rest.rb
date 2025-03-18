@@ -6,15 +6,18 @@ module Upyun
     include Utils
 
     attr_reader :options
-    def initialize(bucket, operator, password, options={ timeout: 60 }, endpoint = Upyun::ED_AUTO)
-      @bucket = bucket
+    def initialize(operator, password, options={ timeout: 60 }, endpoint = Upyun::ED_AUTO)
       @operator = operator
       @password = password
       @options = options
       @endpoint = endpoint
     end
 
-    def put(path, file, headers = {})
+    def put_chunk(path, file, **headers)
+
+    end
+
+    def put(path, file, **headers)
       if file.is_a?(StringIO)
         body = file.read
       elsif file.respond_to?(:read)
@@ -22,15 +25,15 @@ module Upyun
       else
         body = file
       end
-      options = { body: body, length: size(file), headers: headers }
+      options = {
+        body: body,
+        headers: {
+          'Content-Length' => size(file),
+          **headers
+        }
+      }
 
-      # If the type of current bucket is Picture,
-      # put an image maybe return a set of headers
-      # represent the image's metadata
-      # x-upyun-width
-      # x-upyun-height
-      # x-upyun-frames
-      # x-upyun-file-type
+
       request('PUT', path, options) do |hds|
         hds.select { |k| k.to_s.match(/^x_upyun_/i) }.reduce({}) do |memo, (k, v)|
           memo.merge!({k[8..-1].to_sym => /^\d+$/.match(v) ? v.to_i : v})
@@ -92,7 +95,6 @@ module Upyun
 
     private
     def request(method, path, options = {}, &block)
-      fullpath = "/#{@bucket}#{path.start_with?('/') ? path : '/' + path}"
       headers = options[:headers] || {}
       x = options[:body].present? ? Digest::MD5.hexdigest(options[:body]) : ''
       date = Time.now.utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
@@ -100,10 +102,10 @@ module Upyun
       headers.merge!(
         'Date' => date,
         'Content-MD5' => x,
-        'Authorization' => sign(method, fullpath, date, x)
+        'Authorization' => sign(method, path, date, x)
       )
 
-      rest_client.request(method, fullpath, headers: headers, **options.slice(:body, :params))
+      rest_client.request(method, path, headers: headers, **options.slice(:body, :params))
     end
 
     def rest_client
