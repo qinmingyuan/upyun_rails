@@ -1,6 +1,5 @@
 require 'upyun/utils'
 require 'upyun/rest'
-require 'upyun/form'
 
 module Upyun
   DOMAIN = 'api.upyun.com'
