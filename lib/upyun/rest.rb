@@ -9,9 +9,9 @@ module Upyun
       @operator = operator
       @password = password
       if debug
-        @httpx = HTTPX.with(origin: "https://#{endpoint}", debug: STDOUT, debug_level: 1, **options)
+        @httpx = HTTPX.with(origin: "https://#{endpoint}", debug: STDOUT, debug_level: 1)
       else
-        @httpx = HTTPX.with(origin: "https://#{endpoint}", **options)
+        @httpx = HTTPX.with(origin: "https://#{endpoint}")
       end
     end
 
@@ -129,9 +129,8 @@ module Upyun
     end
 
     private
-    def request(method, path, options = {}, &block)
+    def request(method, path, options = {})
       headers = options[:headers] || {}
-      x = options[:body].present? ? Digest::MD5.hexdigest(options[:body]) : ''
       date = Time.now.utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
       headers.transform_keys!(&->(k){ k.to_s.dasherize })
       headers.merge!(
