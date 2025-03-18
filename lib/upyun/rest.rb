@@ -46,7 +46,6 @@ module Upyun
         'X-Upyun-Multi-Uuid' => uuid,
         'Content-Length' => 0
       })
-      binding.b
     ensure
       file.close
     end
