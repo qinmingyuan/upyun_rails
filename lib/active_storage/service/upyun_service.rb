@@ -30,7 +30,7 @@ module ActiveStorage
     def initialize(bucket:, operator:, password:, host:, folder:, **options)
       @client = Upyun::Rest.new(operator, password, options)
       @bucket = bucket
-      @multipart_upload_threshold = options.delete(:multipart_threshold) || 50.megabytes
+      @multipart_upload_threshold = options.delete(:multipart_threshold) || 5.megabytes
       @host = host
       @folder = folder
       @operator = operator
@@ -43,7 +43,7 @@ module ActiveStorage
         if io.size < @multipart_upload_threshold
           @client.put(path_for(key), io, **options)
         else
-          @client.put_chunk(path_for(key), io, **options)
+          @client.put_chunk(path_for(key), io, per: @multipart_upload_threshold, **options)
         end
       end
     end

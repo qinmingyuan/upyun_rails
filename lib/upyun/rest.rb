@@ -13,8 +13,39 @@ module Upyun
       @endpoint = endpoint
     end
 
-    def put_chunk(path, file, **headers)
+    def put_chunk(path, file, per:, **headers)
+      r = request('PUT', path, headers: {
+          'X-Upyun-Multi-Disorder' => true,
+          'X-Upyun-Multi-Stage' => 'initiate',
+          'X-Upyun-Multi-Length' => file.size / 1024,
+          'Content-Length' => 0,
+          **headers
+        }
+      )
+      uuid = r.headers['x']
+      binding.b
 
+      chunk_index = 0
+      while chunk = file.read(per)
+        chunk_index += 1
+
+        request('PUT', path, headers: {
+            'X-Upyun-Multi-Stage' => 'upload',
+            'X-Upyun-Multi-Uuid' => uuid,
+            'X-Upyun-Part-Id' => chunk_index,
+            'Content-Length' => chunk.size,
+            **headers
+          },
+          body: chunk
+        )
+      end
+    ensure
+      file.close
+      request('PUT', path, headers: {
+        'X-Upyun-Multi-Stage' => 'complete',
+        'X-Upyun-Multi-Uuid' => uuid,
+        'Content-Length' => 0
+      })
     end
 
     def put(path, file, **headers)
