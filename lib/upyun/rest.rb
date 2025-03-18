@@ -15,37 +15,40 @@ module Upyun
 
     def put_chunk(path, file, per:, **headers)
       r = request('PUT', path, headers: {
-          'X-Upyun-Multi-Disorder' => true,
-          'X-Upyun-Multi-Stage' => 'initiate',
-          'X-Upyun-Multi-Length' => file.size / 1024,
-          'Content-Length' => 0,
-          **headers
-        }
-      )
-      uuid = r.headers['x']
-      binding.b
+        'X-Upyun-Multi-Disorder' => true,
+        'X-Upyun-Multi-Stage' => 'initiate',
+        'X-Upyun-Multi-Length' => file.size,
+        'X-Upyun-Multi-Part-Size' => per,
+        'X-Upyun-Multi-Type' => headers[:content_type],
+        'Content-Length' => 0,
+        **headers
+      })
+      if r.status == 204
+        uuid = r.headers['x-upyun-multi-uuid']
+      else
+        raise r.body.to_s
+      end
 
       chunk_index = 0
       while chunk = file.read(per)
+        request('PUT', path, body: chunk, headers: {
+          'X-Upyun-Multi-Stage' => 'upload',
+          'X-Upyun-Multi-Uuid' => uuid,
+          'X-Upyun-Part-Id' => chunk_index,
+          'Content-Length' => chunk.size,
+          **headers
+        })
         chunk_index += 1
-
-        request('PUT', path, headers: {
-            'X-Upyun-Multi-Stage' => 'upload',
-            'X-Upyun-Multi-Uuid' => uuid,
-            'X-Upyun-Part-Id' => chunk_index,
-            'Content-Length' => chunk.size,
-            **headers
-          },
-          body: chunk
-        )
       end
-    ensure
-      file.close
+
       request('PUT', path, headers: {
         'X-Upyun-Multi-Stage' => 'complete',
         'X-Upyun-Multi-Uuid' => uuid,
         'Content-Length' => 0
       })
+      binding.b
+    ensure
+      file.close
     end
 
     def put(path, file, **headers)
@@ -132,19 +135,18 @@ module Upyun
       headers.transform_keys!(&->(k){ k.to_s.dasherize })
       headers.merge!(
         'Date' => date,
-        'Content-MD5' => x,
-        'Authorization' => sign(method, path, date, x)
+        'Authorization' => sign(method, path, date)
       )
 
       rest_client.request(method, path, headers: headers, **options.slice(:body, :params))
     end
 
     def rest_client
-      @rest_client ||= HTTPX.with(origin: "https://#{@endpoint}", **options)
+      @rest_client ||= HTTPX.with(origin: "https://#{@endpoint}", debug: STDOUT, debug_level: 1, **options)
     end
 
-    def sign(method, path, date, md5)
-      sign = [method.to_s.upcase, path, date, md5.presence].compact.join('&')
+    def sign(method, path, date)
+      sign = [method.to_s.upcase, path, date].join('&')
       "UPYUN #{@operator}:#{Utils.hmac_sha1(Digest::MD5.hexdigest(@password), sign)}"
     end
 
