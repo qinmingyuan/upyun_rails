@@ -5,12 +5,14 @@ module Upyun
   class Rest
     include Utils
 
-    attr_reader :options
-    def initialize(operator, password, options={ timeout: 60 }, endpoint = Upyun::ED_AUTO)
+    def initialize(operator, password, endpoint: Upyun::ED_AUTO, debug: false)
       @operator = operator
       @password = password
-      @options = options
-      @endpoint = endpoint
+      if debug
+        @httpx = HTTPX.with(origin: "https://#{endpoint}", debug: STDOUT, debug_level: 1, **options)
+      else
+        @httpx = HTTPX.with(origin: "https://#{endpoint}", **options)
+      end
     end
 
     def put_chunk(path, file, per:, **headers)
@@ -137,11 +139,7 @@ module Upyun
         'Authorization' => sign(method, path, date)
       )
 
-      rest_client.request(method, path, headers: headers, **options.slice(:body, :params))
-    end
-
-    def rest_client
-      @rest_client ||= HTTPX.with(origin: "https://#{@endpoint}", debug: STDOUT, debug_level: 1, **options)
+      @httpx.request(method, path, headers: headers, **options.slice(:body, :params))
     end
 
     def sign(method, path, date)
