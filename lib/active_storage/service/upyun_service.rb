@@ -136,7 +136,7 @@ module ActiveStorage
     end
 
     def path_for(key)
-      "/#{@bucket}/#{@folder}/#{key}"
+      "/#{@bucket}/#{@folder}/#{ERB::Util.url_encode(key)}"
     end
 
   end
