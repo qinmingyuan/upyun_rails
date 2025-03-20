@@ -1,9 +1,7 @@
 require 'httpx'
-require 'open-uri'
 
 module Upyun
   class Rest
-    include Utils
 
     def initialize(operator, password, endpoint: Upyun::ED_AUTO, debug: false)
       @operator = operator
