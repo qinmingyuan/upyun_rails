@@ -103,7 +103,7 @@ module ActiveStorage
       uri = ["/#{@bucket}", @folder, key].join('/')
       date = Time.now.utc.strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-      str = [method, uri, date].join("&")
+      str = [method, uri, date].join('&')
       signature = OpenSSL::HMAC.base64digest('sha1', pwd, str)
       auth = "UPYUN #{@operator}:#{signature}"
       {
