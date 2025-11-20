@@ -9,7 +9,12 @@ module Upyun
       if debug
         @httpx = HTTPX.with(origin: "https://#{endpoint}", debug: STDOUT, debug_level: 1)
       else
-        @httpx = HTTPX.with(origin: "https://#{endpoint}")
+        @httpx = HTTPX.with(
+          ssl: {
+            verify_mode: OpenSSL::SSL::VERIFY_NONE
+          },
+          origin: "https://#{endpoint}"
+        )
       end
     end
 
