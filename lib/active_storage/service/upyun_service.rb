@@ -81,9 +81,9 @@ module ActiveStorage
       end
     end
 
-    def url(key, expires_in:, filename:, content_type:, disposition:, params: {})
+    def url(key, expires_in:, filename:, content_type:, disposition:, process: nil)
       instrument :url, key: key do |payload|
-        url = url_for(key, params: params)
+        url = url_for(key, process: process)
         payload[:url] = url
         url
       end
@@ -126,10 +126,9 @@ module ActiveStorage
     end
 
     private
-    def url_for(key, params: {})
+    def url_for(key, process:)
       url = [@host, @folder, key].join('/')
-      return url if params.blank?
-      process = params.delete(:process)
+      return url if process.blank?
       identifier = @upload_options[:identifier] || IDENTIFIER
       url = [url, process].join(identifier) if process
       url
